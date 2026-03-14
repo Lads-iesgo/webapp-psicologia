@@ -88,7 +88,8 @@ export default function Login() {
             className="mb-2"
           />
           <h2 className="text-white text-xl font-semibold tracking-wide">
-            PSICOLOGIA CEPSI
+            PSICOLOGIA
+            <br /> CEPSI
           </h2>
         </div>
 
