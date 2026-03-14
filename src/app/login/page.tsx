@@ -49,7 +49,7 @@ export default function Login() {
             email: response.data.user.email,
             nome: response.data.user.nome,
             perfil: response.data.user.perfil,
-          })
+          }),
         );
       }
 
@@ -76,7 +76,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-[20px] shadow-lg">
+      <div className="w-full max-w-md overflow-hidden rounded-[50px] shadow-lg">
         {/* Header azul escuro */}
         <div className="bg-blue-900 p-6 flex flex-col items-center justify-center">
           <Image
@@ -88,7 +88,7 @@ export default function Login() {
             className="mb-2"
           />
           <h2 className="text-white text-xl font-semibold tracking-wide">
-            FISIOTERAPIA
+            PSICOLOGIA CEPSI
           </h2>
         </div>
 
