@@ -93,7 +93,7 @@ export default function Login() {
         </div>
 
         {/* Formulário de login */}
-        <div className="bg-white p-8 border border-gray-200 rounded-b-[20px]">
+        <div className="bg-white p-8 border border-gray-200 rounded-b-[50px]">
           <h1 className="text-2xl font-bold text-blue-900 mb-6 text-center">
             Login
           </h1>
