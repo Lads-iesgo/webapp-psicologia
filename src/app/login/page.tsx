@@ -87,7 +87,7 @@ export default function Login() {
             alt="Logo Instituição IESGO"
             className="mb-2"
           />
-          <h2 className="text-white text-xl font-semibold tracking-wide">
+          <h2 className="text-white text-xl font-semibold tracking-wide text-center leading-tight">
             PSICOLOGIA
             <br /> CEPSI
           </h2>
