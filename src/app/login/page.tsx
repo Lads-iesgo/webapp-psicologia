@@ -143,12 +143,12 @@ export default function Login() {
               onClick={() => {}}
               variant="primary"
               type="submit"
-              className="w-full"
+              className="w-full rounded-full"
             />
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-500">
-            <p>© {new Date().getFullYear()} IESGO - Clínica de Fisioterapia</p>
+            <p>© {new Date().getFullYear()} IESGO - Clínica de Psicologia</p>
           </div>
         </div>
       </div>
