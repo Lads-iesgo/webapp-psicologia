@@ -36,6 +36,7 @@ export interface Paciente {
 	cpf: string;
 	cep: string;
 	endereco: string;
+	ativo?: number;
 }
 
 export interface Aluno {
@@ -48,6 +49,7 @@ export interface Aluno {
 	cpf: string;
 	semestre: string;
 	perfil_id: number;
+	ativo?: number;
 }
 
 export interface Indisponibilidade {

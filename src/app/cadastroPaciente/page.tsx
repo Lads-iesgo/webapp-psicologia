@@ -343,6 +343,20 @@ export default function CadastrarPaciente() {
 									</div>
 								</div>
 								<div className='flex flex-col md:flex-row gap-4 mb-4'>
+									<div className='w-full sm:w-1/3'>
+										<label className='block text-base font-medium mb-1'>
+											CEP
+										</label>
+										<input
+											type='text'
+											name='cep'
+											value={form.cep}
+											placeholder='00000-000'
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
+											required
+										/>
+									</div>
 									<div className='w-full md:w-3/5'>
 										<label className='block text-base font-medium mb-1'>
 											Endereço
@@ -356,22 +370,6 @@ export default function CadastrarPaciente() {
 											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
 											required
 										/>
-									</div>
-									<div className='w-full sm:w-1/2 md:w-1/5'>
-										<label className='block text-base font-medium mb-1'>
-											sexo
-										</label>
-										<select
-											name='genero'
-											value={form.genero}
-											onChange={handleChange}
-											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black appearance-none'
-											required
-										>
-											<option value='nao_informar'>Não quero informar</option>
-											<option value='masculino'>Masculino</option>
-											<option value='feminino'>Feminino</option>
-										</select>
 									</div>
 									<div className='w-full sm:w-1/2 md:w-1/5'>
 										<label className='block text-base font-medium mb-1'>
@@ -405,20 +403,6 @@ export default function CadastrarPaciente() {
 									</div>
 									<div className='w-full sm:w-1/3'>
 										<label className='block text-base font-medium mb-1'>
-											CEP
-										</label>
-										<input
-											type='text'
-											name='cep'
-											value={form.cep}
-											placeholder='00000-000'
-											onChange={handleChange}
-											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
-											required
-										/>
-									</div>
-									<div className='w-full sm:w-1/3'>
-										<label className='block text-base font-medium mb-1'>
 											Cidade
 										</label>
 										<input
@@ -430,6 +414,22 @@ export default function CadastrarPaciente() {
 											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
 											required
 										/>
+									</div>
+									<div className='w-full sm:w-1/2 md:w-1/5'>
+										<label className='block text-base font-medium mb-1'>
+											sexo
+										</label>
+										<select
+											name='genero'
+											value={form.genero}
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black appearance-none'
+											required
+										>
+											<option value='nao_informar'>Não quero informar</option>
+											<option value='masculino'>Masculino</option>
+											<option value='feminino'>Feminino</option>
+										</select>
 									</div>
 								</div>
 								{mensagem && (

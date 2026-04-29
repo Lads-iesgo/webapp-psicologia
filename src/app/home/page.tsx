@@ -21,7 +21,7 @@ import RouteGuard from "../components/RouteGuard";
 import {
 	Consulta,
 	Paciente,
-	Fisioterapeuta,
+	Aluno,
 	Horario,
 	Indisponibilidade,
 } from "../interfaces/types";
@@ -46,7 +46,7 @@ export default function Home() {
 	const [consulta, setConsulta] = useState<Consulta[]>([]);
 	const [events, setEvents] = useState<EventInput[]>([]);
 	const [pacientes, setPacientes] = useState<Paciente[]>([]);
-	const [fisioterapeutas, setFisioterapeutas] = useState<Fisioterapeuta[]>([]);
+	const [fisioterapeutas, setFisioterapeutas] = useState<Aluno[]>([]);
 	const [horarios, setHorarios] = useState<Horario[]>([]);
 	const [nomeUsuario, setNomeUsuario] = useState("");
 	const [avisosAbertos, setAvisosAbertos] = useState(false);
@@ -156,7 +156,7 @@ export default function Home() {
 		const eventos: EventInput[] = consulta.map((item) => {
 			const paciente = pacientes.find((p) => p.id === item.paciente_id);
 			const fisioterapeuta = fisioterapeutas.find(
-				(f) => f.id === item.fisioterapeuta_id,
+				(f) => f.id === item.aluno_id,
 			);
 			const horario = horarios.find((h) => h.id === item.horario_id);
 
@@ -194,7 +194,7 @@ export default function Home() {
 				startStr: horario?.horario ? `${horario.horario}` : "",
 				extendedProps: {
 					pacienteId: item.paciente_id,
-					fisioterapeutaId: item.fisioterapeuta_id,
+					fisioterapeutaId: item.aluno_id,
 					horarioId: item.horario_id,
 					status: item.status,
 					pacienteNome: pacienteNome,
