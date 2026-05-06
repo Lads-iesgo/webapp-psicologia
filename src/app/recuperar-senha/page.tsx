@@ -59,7 +59,7 @@ export default function RecuperarSenha() {
 						className='mb-2 w-auto h-auto'
 					/>
 					<h2 className='text-white text-xl font-semibold tracking-wide'>
-						FISIOTERAPIA
+						PSICOLOGIA
 					</h2>
 				</div>
 
