@@ -31,7 +31,7 @@ export default function PopupConfirmacao({
 						alt='IESGO'
 						width={24}
 						height={24}
-						className='mr-3 h-auto'
+						className='mr-3'
 					/>
 					<span className='text-white font-semibold text-lg'>{titulo}</span>
 				</div>
