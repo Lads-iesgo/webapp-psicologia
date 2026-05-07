@@ -36,6 +36,7 @@ export interface Paciente {
 	cpf: string;
 	cep: string;
 	endereco: string;
+	ativo?: number;
 }
 
 export interface Fisioterapeuta {
@@ -48,4 +49,5 @@ export interface Fisioterapeuta {
 	cpf: string;
 	semestre: string;
 	perfil_id: number;
+	ativo?: number;
 }

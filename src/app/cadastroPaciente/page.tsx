@@ -269,33 +269,95 @@ export default function CadastrarPaciente() {
 										required
 									/>
 								</div>
-								<div className='w-full sm:w-1/2 md:w-1/3'>
-									<label className='block text-base font-medium mb-1'>
-										E-mail
-									</label>
-									<input
-										type='email'
-										name='email'
-										value={form.email}
-										placeholder='email@exemplo.com'
-										onChange={handleChange}
-										className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
-										required
-									/>
+								<div className='flex flex-col md:flex-row gap-4 mb-4'>
+									<div className='w-full sm:w-1/3'>
+										<label className='block text-base font-medium mb-1'>
+											CEP
+										</label>
+										<input
+											type='text'
+											name='cep'
+											value={form.cep}
+											placeholder='00000-000'
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
+											required
+										/>
+									</div>
+									<div className='w-full md:w-3/5'>
+										<label className='block text-base font-medium mb-1'>
+											Endereço
+										</label>
+										<input
+											type='text'
+											name='endereco'
+											value={form.endereco}
+											placeholder='Nome da rua, avenida, etc.'
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
+											required
+										/>
+									</div>
+									<div className='w-full sm:w-1/2 md:w-1/5'>
+										<label className='block text-base font-medium mb-1'>
+											Número
+										</label>
+										<input
+											type='text'
+											name='numero'
+											value={form.numero}
+											placeholder='123'
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
+											required
+										/>
+									</div>
 								</div>
-								<div className='w-full sm:w-1/2 md:w-1/4'>
-									<label className='block text-base font-medium mb-1'>
-										Data de nascimento
-									</label>
-									<input
-										type='text'
-										name='data_nascimento'
-										value={form.data_nascimento}
-										placeholder='DD/MM/AAAA'
-										onChange={handleChange}
-										className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
-										required
-									/>
+								<div className='flex flex-col md:flex-row gap-4 mb-4'>
+									<div className='w-full sm:w-1/3'>
+										<label className='block text-base font-medium mb-1'>
+											Bairro
+										</label>
+										<input
+											type='text'
+											name='bairro'
+											value={form.bairro}
+											placeholder='Centro'
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
+											required
+										/>
+									</div>
+									<div className='w-full sm:w-1/3'>
+										<label className='block text-base font-medium mb-1'>
+											Cidade
+										</label>
+										<input
+											type='text'
+											name='cidade'
+											value={form.cidade}
+											placeholder='São Paulo'
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
+											required
+										/>
+									</div>
+									<div className='w-full sm:w-1/2 md:w-1/5'>
+										<label className='block text-base font-medium mb-1'>
+											sexo
+										</label>
+										<select
+											name='genero'
+											value={form.genero}
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black appearance-none'
+											required
+										>
+											<option value='nao_informar'>Não quero informar</option>
+											<option value='masculino'>Masculino</option>
+											<option value='feminino'>Feminino</option>
+										</select>
+									</div>
 								</div>
 							</div>
 							<div className='flex flex-col md:flex-row gap-4 mb-4'>

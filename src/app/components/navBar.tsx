@@ -6,12 +6,18 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCookies } from "next-client-cookies";
 import { useNotification } from "./Notification";
+import { useAuth } from "./AuthContext";
+import { getVisibleMenuItems } from "../lib/menuItems";
 
 //Componente NavBar que representa a barra de navegação lateral
 export default function NavBar() {
 	const router = useRouter();
 	const cookies = useCookies();
 	const { showNotification } = useNotification();
+	const { userGroup, user, logout } = useAuth();
+
+	// Filtra os itens do menu conforme o grupo do usuário
+	const visibleItems = getVisibleMenuItems(userGroup, user?.perfil);
 
 	// Função para fazer logout
 	const handleLogout = () => {

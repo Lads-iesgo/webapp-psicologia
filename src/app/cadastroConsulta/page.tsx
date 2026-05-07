@@ -8,11 +8,13 @@ import NavBar from "../components/navBar"; // Importa de src/app/components/navB
 import TopBar from "../components/topBar"; // Importa de src/app/components/topBar.tsx
 import Button from "../components/button"; // Importa de src/app/components/button.tsx
 import api from "../services/api";
+import { Aluno } from "../interfaces/types";
 
 //Criação de interfaces para os Pacientes
 interface Paciente {
 	id: number;
 	nome_completo: string;
+	ativo?: number;
 }
 
 //Criação de interfaces para os Fisioterapeutas
@@ -30,7 +32,7 @@ interface Horario {
 export default function PaginaCadastrarConsulta() {
 	//Estados para armazenar os dados dos pacientes, fisioterapeutas e horários
 	const [pacientes, setPacientes] = useState<Paciente[]>([]);
-	const [fisioterapeutas, setFisioterapeutas] = useState<Fisioterapeuta[]>([]);
+	const [fisioterapeutas, setFisioterapeutas] = useState<Aluno[]>([]);
 	const [horarios, setHorarios] = useState<Horario[]>([]);
 
 	const [paciente, setPaciente] = useState("");
@@ -45,10 +47,10 @@ export default function PaginaCadastrarConsulta() {
 
 	//Efeito para buscar os dados dos pacientes, fisioterapeutas e horários ao carregar a página
 	useEffect(() => {
-		api.get<Paciente[]>("/paciente").then((res) => setPacientes(res.data));
+		api.get<Paciente[]>("/paciente").then((res) => setPacientes(res.data.filter((p) => p.ativo !== 0)));
 		api
-			.get<Fisioterapeuta[]>("/usuario/fisioterapeutas")
-			.then((res) => setFisioterapeutas(res.data));
+			.get<Aluno[]>("/usuario")
+			.then((res) => setFisioterapeutas(res.data.filter((p) => p.ativo !== 0)));
 		api.get<Horario[]>("/horario").then((res) => setHorarios(res.data));
 	}, []);
 
