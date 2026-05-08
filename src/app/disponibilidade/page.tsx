@@ -45,7 +45,7 @@ export default function Disponibilidade() {
 	} | null>(null);
 
 	const [pacientes, setPacientes] = useState<Paciente[]>([]);
-	const [fisioterapeutas, setFisioterapeutas] = useState<Fisioterapeuta[]>([]);
+	const [alunos, setAlunos] = useState<Aluno[]>([]);
 	const [horarios, setHorarios] = useState<Horario[]>([]);
 	const [notification, setNotification] = useState<{
 		type: "success" | "error" | "warning";
@@ -355,7 +355,9 @@ export default function Disponibilidade() {
 	//Efeito para buscar pacientes, fisioterapeutas e horários ao carregar a página
 	useEffect(() => {
 		api.get("/paciente").then((res) => setPacientes(res.data));
-		api.get("/usuario").then((res) => setFisioterapeutas(res.data));
+		api
+			.get("/usuario/alunos")
+			.then((res) => setAlunos(res.data));
 		api.get("/horario").then((res) => setHorarios(res.data));
 	}, []);
 
@@ -374,8 +376,8 @@ export default function Disponibilidade() {
 
 		const eventos: EventInput[] = consulta.map((item) => {
 			const paciente = pacientes.find((p) => p.id === item.paciente_id);
-			const fisioterapeuta = fisioterapeutas.find(
-				(f) => f.id === item.fisioterapeuta_id,
+			const fisioterapeuta = alunos.find(
+				(f) => f.id === item.aluno_id,
 			);
 			const horario = horarios.find((h) => h.id === item.horario_id);
 
@@ -441,7 +443,7 @@ export default function Disponibilidade() {
 			};
 		});
 		setEvents([...eventos, ...eventosIndisponiveis]);
-	}, [consulta, pacientes, fisioterapeutas, horarios, indisponibilidades, filtroAlunoId,
+	}, [consulta, pacientes, alunos, horarios, indisponibilidades, filtroAlunoId,
 		filtroPacienteId]);
 
 	return (
@@ -545,7 +547,7 @@ export default function Disponibilidade() {
 									className='w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-950 focus:outline-none focus:ring-1 focus:ring-blue-950'
 								>
 									<option value='all'>Todos</option>
-									{fisioterapeutas.map((f) => (
+									{alunos.map((f) => (
 										<option key={f.id} value={String(f.id)}>
 											{f.nome_completo}
 										</option>
@@ -921,10 +923,8 @@ export default function Disponibilidade() {
 																		: "border-gray-300"
 																} px-4 py-3 text-base select-custom`}
 															>
-																<option value=''>
-																	Selecione o fisioterapeuta
-																</option>
-																{fisioterapeutas.map((f) => (
+																<option value=''>Selecione o Aluno</option>
+																{alunos.map((f) => (
 																	<option key={f.id} value={f.id}>
 																		{f.nome_completo}
 																	</option>
