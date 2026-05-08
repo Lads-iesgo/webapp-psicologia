@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+//Importando a tipagem necessária
 import { TitleProps } from "../interfaces/types";
 import { useRouter } from "next/navigation";
 import { useCookies } from "next-client-cookies";
@@ -9,6 +8,7 @@ import { useNotification } from "./Notification";
 import { useAuth } from "./AuthContext";
 import { getVisibleMenuItems } from "../lib/menuItems";
 
+//Componente TopBar que exibe o título da página
 export default function TopBar(props: TitleProps) {
 	const [isOpen, setIsOpen] = useState(false);
 
@@ -127,6 +127,6 @@ export default function TopBar(props: TitleProps) {
 					</div>
 				</nav>
 			</div>
-		</>
+		</div>
 	);
 }

@@ -14,8 +14,6 @@ import { useNotification } from "../components/Notification";
 
 import NavBar from "../components/navBar";
 import TopBar from "../components/topBar";
-import AvisosLoginModal from "../components/AvisosLoginModal";
-import RouteGuard from "../components/RouteGuard";
 
 //Importação das tipagens necessárias
 import {
@@ -23,45 +21,19 @@ import {
 	Paciente,
 	Aluno,
 	Horario,
-	Indisponibilidade,
 } from "../interfaces/types";
-
-const AVISOS_LOGIN = [
-  "Os alunos deverão cumprir as exigências mínimas estabelecidas nos critérios de avaliação.",
-  "As atividades serão realizadas no Serviço-Escola e em instituições parceiras.",
-  "As atividades práticas serão orientadas semanalmente pelo professor responsável pelo grupo.",
-  "Os estagiários deverão seguir os preceitos éticos da profissão.",
-  "A conduta dos estagiários deve estar em conformidade com o Código de Ética Profissional dos Psicólogos, não sendo permitido alegar desconhecimento.",
-  "É obrigatório manter sigilo sobre tudo o que for visto e ouvido, evitando comentários sobre quaisquer atividades realizadas.",
-  "É necessário manter apresentação adequada, incluindo vestimentas, maquiagem e adereços.",
-  "Evitar o uso do celular durante o período de atividades.",
-  "Seguir as orientações dos supervisores, tanto em aspectos técnicos quanto comportamentais.",
-];
 
 export default function Home() {
 	//Definindo os estados para armazenar os dados
-	const [indisponibilidades, setIndisponibilidades] = useState<
-		Indisponibilidade[]
-	>([]);
 	const [consulta, setConsulta] = useState<Consulta[]>([]);
 	const [events, setEvents] = useState<EventInput[]>([]);
 	const [pacientes, setPacientes] = useState<Paciente[]>([]);
 	const [fisioterapeutas, setFisioterapeutas] = useState<Aluno[]>([]);
 	const [horarios, setHorarios] = useState<Horario[]>([]);
 	const [nomeUsuario, setNomeUsuario] = useState("");
-	const [avisosAbertos, setAvisosAbertos] = useState(false);
 
 	//Importar o hook de notificação
 	const { showNotification } = useNotification();
-
-	useEffect(() => {
-		api
-			.get<Indisponibilidade[]>("/indisponibilidade")
-			.then((response) => setIndisponibilidades(response.data))
-			.catch((err) =>
-				console.error("Erro ao carregar indisponibilidades: " + err),
-			);
-	}, []);
 
 	//Verificar se houve login recente e mostrar notificação
 	useEffect(() => {
@@ -71,7 +43,6 @@ export default function Home() {
 			//Buscar dados do usuário no localStorage
 			const userDataString = localStorage.getItem("userData");
 			let perfilUsuario = "";
-			let isEstagiario = false;
 
 			if (userDataString) {
 				try {
@@ -79,11 +50,6 @@ export default function Home() {
 					const userData = JSON.parse(userDataString);
 					perfilUsuario = userData.perfil || "";
 					setNomeUsuario(userData.nome || "");
-					 const perfilNormalizado = String(perfilUsuario).trim().toLowerCase();
-						isEstagiario =
-						perfilNormalizado === "estagiário" ||
-						perfilNormalizado === "estagiario" ||
-						perfilNormalizado === "aluno";
 				} catch (e) {
 					console.error("Erro ao analisar dados do usuário:", e);
 				}
@@ -94,25 +60,12 @@ export default function Home() {
 				? `Login realizado com sucesso! Bem-vindo ${perfilUsuario}!`
 				: "Login realizado com sucesso! Bem-vindo(a)!";
 
-			showNotification("success", mensagemBoasVindas)
-			
-			if (isEstagiario) {
-				setAvisosAbertos(true);
-			}
+			showNotification("success", mensagemBoasVindas);
 
 			//Remover a flag para não mostrar a notificação novamente
 			sessionStorage.removeItem("loginSuccess");
 		}
 	}, [showNotification]);
-
-	useEffect(() => {
-		document.body.style.overflow = avisosAbertos ? "hidden" : "";
-
-		return () => {
-		document.body.style.overflow = "";
-		};
-	}, [avisosAbertos]);
-
 
 	//Carregar dados de consultas e mostrar notificação em caso de erro
 	useEffect(() => {
@@ -184,12 +137,12 @@ export default function Home() {
 			//Informações formatadas para exibição
 			const pacienteNome = paciente?.nome_completo ?? "Paciente não informado";
 			const fisioterapeutaNome =
-				fisioterapeuta?.nome_completo ?? "Aluno não informado";
+				fisioterapeuta?.nome_completo ?? "Fisioterapeuta não informado";
 
 			//Retorna o objeto de evento formatado
 			return {
 				id: String(item.id), //Convertendo para string para evitar erro de tipagem
-				title: `Paciente: ${pacienteNome} | Aluno: ${fisioterapeutaNome}`,
+				title: `Paciente: ${pacienteNome} | Fisioterapeuta: ${fisioterapeutaNome}`,
 				start: dataHoraISO,
 				startStr: horario?.horario ? `${horario.horario}` : "",
 				extendedProps: {
@@ -203,34 +156,19 @@ export default function Home() {
 				},
 			};
 		});
-
-		// 2. Mapeia as indisponibilidades para o formato do FullCalendar
-		const eventosIndisponiveis: EventInput[] = indisponibilidades.map((ind) => {
-			return {
-				id: `block-${ind.id}`,
-				title: ind.descricao || "Dia Indisponível",
-				start: ind.data_indisponivel,
-				allDay: true,
-				backgroundColor: "#EF4444", // Vermelho
-				borderColor: "#EF4444",
-				extendedProps: {
-					status: "indisponivel",
-				},
-			};
-		});
-		setEvents([...eventos, ...eventosIndisponiveis]);
-	}, [consulta, pacientes, fisioterapeutas, horarios, indisponibilidades]);
+		setEvents(eventos);
+	}, [consulta, pacientes, fisioterapeutas, horarios]);
 
 	//Renderiza o componente principal
 	return (
-		<RouteGuard>
+		<>
 			<NavBar />
 			<TopBar title={nomeUsuario ? `Bem-vindo, ${nomeUsuario}` : "Home"} />
 
 			{/* Criação do componente calendário */}
 			<main className='flex flex-col min-h-screen justify-center items-center p-0'>
 				<div className='flex justify-center items-center w-full'>
-					<div className='w-full px-2 mt-20 md:ml-[288px] md:w-[calc(85vw-320px)] md:px-0 cursor-default'>
+					<div className='ml-[288px] mt-20 w-[calc(90vw-320px)] min-h-[600px] cursor-default'>
 						<FullCalendar
 							//Opções do calendário
 							plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -258,107 +196,80 @@ export default function Home() {
 							}}
 							//Configuração do tooltip
 							eventDidMount={(info) => {
-								if (info.event.extendedProps.status === "indisponivel") {
-									return;
-								}
-								// Cria um elemento tooltip personalizado
+								//Cria um elemento tooltip personalizado
 								const tooltip = document.createElement("div");
 								tooltip.className = "fc-event-tooltip";
 								tooltip.innerHTML = `
-          <div class="bg-white border border-gray-200 rounded p-2 shadow-lg text-sm">
-            <p><strong>Paciente:</strong> ${
-							info.event.extendedProps.pacienteNome || "Não informado"
-						}</p>
-            <p><strong>Aluno:</strong> ${
-							info.event.extendedProps.fisioterapeutaNome || "Não informado"
-						}</p>
-            <p><strong>Horário:</strong> ${
-							info.event.extendedProps.horario || "Não informado"
-						}</p>
-          </div>
-        `;
+                  <div class="bg-white border border-gray-200 rounded p-2 shadow-lg text-sm">
+                    <p><strong>Paciente:</strong> ${
+											info.event.extendedProps.pacienteNome || "Não informado"
+										}</p>
+                    <p><strong>Fisioterapeuta:</strong> ${
+											info.event.extendedProps.fisioterapeutaNome ||
+											"Não informado"
+										}</p>
+                    <p><strong>Horário:</strong> ${
+											info.event.extendedProps.horario || "Não informado"
+										}</p>
+                  </div>
+                `;
 								tooltip.style.position = "absolute";
 								tooltip.style.zIndex = "10000";
 								tooltip.style.display = "none";
 
 								document.body.appendChild(tooltip);
 
-								// Armazena referência no elemento para cleanup via eventWillUnmount
-								(info.el as HTMLElement & { _tooltip?: HTMLDivElement })._tooltip = tooltip;
-
-								// Handlers nomeados para remoção limpa
-								const handleMouseEnter = () => {
+								//Mostra o tooltip no hover com verificação de posição
+								info.el.addEventListener("mouseenter", () => {
 									const rect = info.el.getBoundingClientRect();
 
-									// Define tooltip como visível mas fora da tela para poder calcular dimensões
+									//Define tooltip como visível mas fora da tela para poder calcular dimensões
 									tooltip.style.display = "block";
 									tooltip.style.left = "-9999px";
 									tooltip.style.top = "-9999px";
 
-									// Obtém as dimensões do tooltip
+									//Obtém as dimensões do tooltip
 									const tooltipRect = tooltip.getBoundingClientRect();
 									const tooltipWidth = tooltipRect.width;
 									const tooltipHeight = tooltipRect.height;
 
-									// Verifica se é mobile (telas com largura até 768px)
-									const isMobile = window.innerWidth <= 768;
+									//Verifica espaço à direita
+									const spaceRight = window.innerWidth - rect.right;
+									//Verifica espaço abaixo
+									const spaceBottom = window.innerHeight - rect.top;
 
-									if (isMobile) {
-										tooltip.style.top = rect.bottom + 5 + "px";
-										let leftPos = rect.left + rect.width / 2 - tooltipWidth / 2;
-										leftPos = Math.max(
-											10,
-											Math.min(leftPos, window.innerWidth - tooltipWidth - 10),
-										);
-										tooltip.style.left = leftPos + "px";
+									//Posicionamento horizontal
+									if (spaceRight >= tooltipWidth + 10) {
+										//Suficiente espaço à direita
+										tooltip.style.left = rect.right + 10 + "px";
 									} else {
-										const spaceRight = window.innerWidth - rect.right;
-										const spaceBottom = window.innerHeight - rect.top;
-
-										if (spaceRight >= tooltipWidth + 10) {
-											tooltip.style.left = rect.right + 10 + "px";
-										} else {
-											tooltip.style.left = rect.left - tooltipWidth - 10 + "px";
-										}
-
-										if (spaceBottom >= tooltipHeight + 10) {
-											tooltip.style.top = rect.top + "px";
-										} else {
-											const topPosition = Math.max(
-												10,
-												rect.bottom - tooltipHeight,
-											);
-											tooltip.style.top = topPosition + "px";
-										}
+										//Não há espaço à direita, posicionar à esquerda
+										tooltip.style.left = rect.left - tooltipWidth - 10 + "px";
 									}
-								};
 
-								const handleMouseLeave = () => {
+									//Posicionamento vertical
+									if (spaceBottom >= tooltipHeight + 10) {
+										//Suficiente espaço abaixo
+										tooltip.style.top = rect.top + "px";
+									} else {
+										//Não há espaço abaixo, posicionar acima ou ajustar para caber na tela
+										const topPosition = Math.max(
+											10,
+											rect.bottom - tooltipHeight,
+										);
+										tooltip.style.top = topPosition + "px";
+									}
+								});
+
+								//Esconde o tooltip quando o mouse sai
+								info.el.addEventListener("mouseleave", () => {
 									tooltip.style.display = "none";
-								};
+								});
 
-								info.el.addEventListener("mouseenter", handleMouseEnter);
-								info.el.addEventListener("mouseleave", handleMouseLeave);
-
-								// Armazena handlers para remoção no unmount
-								(info.el as HTMLElement & { _tooltipHandlers?: { enter: () => void; leave: () => void } })._tooltipHandlers = {
-									enter: handleMouseEnter,
-									leave: handleMouseLeave,
+								//Remove o tooltip quando o evento é desmontado
+								return () => {
+									document.body.removeChild(tooltip);
 								};
-							}}
-							// Cleanup correto: remove tooltip do DOM e listeners do elemento
-							eventWillUnmount={(info) => {
-								const el = info.el as HTMLElement & {
-									_tooltip?: HTMLDivElement;
-									_tooltipHandlers?: { enter: () => void; leave: () => void };
-								};
-								if (el._tooltip && document.body.contains(el._tooltip)) {
-									document.body.removeChild(el._tooltip);
-								}
-								if (el._tooltipHandlers) {
-									el.removeEventListener("mouseenter", el._tooltipHandlers.enter);
-									el.removeEventListener("mouseleave", el._tooltipHandlers.leave);
-								}
 							}}
 							//Configuração de altura do calendário
 							height={600}
@@ -375,19 +286,13 @@ export default function Home() {
 							//Tempo de finalização do calendário
 							slotMaxTime='17:00:00'
 							//Configuração de slots de dia inteiro
-							allDaySlot={true}
+							allDaySlot={false}
 							//Configuração de tempo de rolagem
 							scrollTime='08:00:00'
 						/>
 					</div>
 				</div>
 			</main>
-
-			<AvisosLoginModal
-				aberto={avisosAbertos}
-				avisos={AVISOS_LOGIN}
-				onFechar={() => setAvisosAbertos(false)}
-			/>
-		</RouteGuard>
+		</>
 	);
 }
