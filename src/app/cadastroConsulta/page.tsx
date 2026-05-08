@@ -40,7 +40,7 @@ export default function PaginaCadastrarConsulta() {
 		texto: string;
 	} | null>(null);
 
-	//Efeito para buscar os dados dos pacientes, fisioterapeutas e horários ao carregar a página
+	//Efeito para buscar os dados dos pacientes e horários ao carregar a página
 	useEffect(() => {
 		api.get<Paciente[]>("/paciente").then((res) => setPacientes(res.data.filter((p) => p.ativo !== 0)));
 		api
