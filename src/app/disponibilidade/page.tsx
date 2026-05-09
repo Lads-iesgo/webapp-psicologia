@@ -23,7 +23,6 @@ import {
 	Consulta,
 	Evento,
 	Paciente,
-	Fisioterapeuta,
 	Horario,
 } from "../interfaces/types";
 

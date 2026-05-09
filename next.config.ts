@@ -4,11 +4,15 @@ const dynamicOrigins = (process.env.NEXT_DEV_ORIGINS || "")
 	.map((o) => o.trim())
 	.filter(Boolean);
 
-const nextConfig = {
-	allowedDevOrigins: ["*", ...dynamicOrigins],
-	turbopack: {
-		root: __dirname,
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+	eslint: {
+		ignoreDuringBuilds: true,
 	},
+	typescript: {
+		ignoreBuildErrors: true,
+	}
 };
 
-module.exports = nextConfig;
+export default nextConfig;

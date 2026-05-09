@@ -17,12 +17,6 @@ interface Paciente {
 	ativo?: number;
 }
 
-//Criação de interfaces para os Fisioterapeutas
-interface Fisioterapeuta {
-	id: number;
-	nome_completo: string;
-}
-
 //Criação de interfaces para os Horários
 interface Horario {
 	id: number;

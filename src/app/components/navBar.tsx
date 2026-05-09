@@ -14,10 +14,9 @@ export default function NavBar() {
 	const router = useRouter();
 	const cookies = useCookies();
 	const { showNotification } = useNotification();
-	const { userGroup, user, logout } = useAuth();
+	const { userGroup, user } = useAuth();
 
-	// Filtra os itens do menu conforme o grupo do usuário
-	const visibleItems = getVisibleMenuItems(userGroup, user?.perfil);
+	// Remoção de variáveis não utilizadas
 
 	// Função para fazer logout
 	const handleLogout = () => {
