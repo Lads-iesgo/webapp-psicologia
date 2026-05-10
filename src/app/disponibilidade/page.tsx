@@ -17,35 +17,42 @@ import { CheckIcon, ExclamationTriangleIcon } from "@heroicons/react/20/solid";
 
 import NavBar from "../components/navBar";
 import TopBar from "../components/topBar";
+import RouteGuard from "../components/RouteGuard";
 
 //Importação das tipagens necessárias
 import {
 	Consulta,
 	Evento,
 	Paciente,
-	Fisioterapeuta,
+	Aluno,
+	Indisponibilidade,
 	Horario,
 } from "../interfaces/types";
 
 export default function Disponibilidade() {
+	const [indisponibilidades, setIndisponibilidades] = useState<
+		Indisponibilidade[]
+	>([]);
+	const [userPerfil, setUserPerfil] = useState<string>("");
 	//Definindo os estados para armazenar os dados
 	const [consulta, setConsulta] = useState<Consulta[]>([]);
 	const [events, setEvents] = useState<EventInput[]>([]);
 	const [newEvent, setNewEvent] = useState<Evento>({
-		title: 0,
+		title: "",
 		start: "",
 	});
 	const [showModal, setShowModal] = useState(false);
+	const [showActionModal, setShowActionModal] = useState(false);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [eventToDelete, setEventToDelete] = useState<{
 		id: number | null;
 		pacienteNome?: string;
-		fisioterapeutaNome?: string;
+		alunoNome?: string;
 		horario?: string;
 	} | null>(null);
 
 	const [pacientes, setPacientes] = useState<Paciente[]>([]);
-	const [fisioterapeutas, setFisioterapeutas] = useState<Fisioterapeuta[]>([]);
+	const [alunos, setAlunos] = useState<Aluno[]>([]);
 	const [horarios, setHorarios] = useState<Horario[]>([]);
 	const [notification, setNotification] = useState<{
 		type: "success" | "error" | "warning";
@@ -192,38 +199,163 @@ export default function Disponibilidade() {
 		}, 5000);
 	}
 
-	//Função para lidar com o clique na data
-	function handleDateClick(arg: { date: Date }) {
-		setNewEvent({ ...newEvent, start: arg.date, id: new Date().getTime() });
-		setShowModal(true);
+	//Função para lidar com o clique na data// Função para lidar com o clique na data (quadradinho vazio)
+	function handleDateClick(arg: { date: Date; dateStr: string }) {
+		const isIndisponivel = events.some((e) => {
+			// 1. Verificação de segurança: Se não houver start, ignora esse evento no loop
+			if (!e.start) return false;
+
+			let eventDateStr: string;
+
+			// 2. Extração segura da data do evento
+			if (e.start instanceof Date) {
+				eventDateStr = e.start.toISOString().split("T")[0];
+			} else if (typeof e.start === "string") {
+				eventDateStr = e.start.split("T")[0];
+			} else {
+				// Caso seja um tipo inesperado, tentamos converter com segurança
+				const d = new Date(e.start as string | number | Date);
+				eventDateStr = !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : "";
+			}
+
+			// 3. Compara apenas a parte YYYY-MM-DD
+			const clickedDate = arg.dateStr.split("T")[0];
+
+			return (
+				e.extendedProps?.status === "indisponivel" &&
+				eventDateStr === clickedDate
+			);
+		});
+
+		if (isIndisponivel) {
+			return;
+		}
+
+		// Limpa o estado completamente para uma nova consulta
+		// Usa o dateStr para garantir a string "YYYY-MM-DD" perfeitamente
+		setNewEvent({
+			title: "",
+			start: arg.dateStr,
+			paciente_id: undefined,
+			aluno_id: undefined,
+			horario_id: undefined,
+		});
+
+		// Professor vai direto para o cadastro de consulta (sem opção de indisponibilidade)
+		if (!temPermissaoIndisponibilidade) {
+			setShowModal(true);
+			return;
+		}
+
+		setActionModalMode("default");
+		setShowActionModal(true);
 	}
 
+	// Função para tornar o dia indisponível
+	async function handleMakeUnavailable() {
+		if (!newEvent || !newEvent.start) return;
+
+		const dataString =
+			newEvent.start instanceof Date
+				? newEvent.start.toISOString().split("T")[0]
+				: new Date(newEvent.start).toISOString().split("T")[0];
+
+		const payload = {
+			data_indisponivel: dataString,
+			descricao: "Dia Indisponível",
+			hora_inicio: "00:00", // ou null, dependendo do seu banco
+			hora_fim: "23:59",
+		};
+
+		try {
+			const response = await api.post("/indisponibilidade", payload);
+			// Atualizamos o estado de indisponibilidades.
+			// O useEffect vai detectar isso e redesenhar o calendário sozinho.
+			setIndisponibilidades((prev) => [...prev, response.data]);
+
+			// Remove do estado local as consultas que foram excluídas pelo backend
+			setConsulta((prev) =>
+				prev.filter((c) => {
+					const dataConsulta =
+						typeof c.data_consulta === "string"
+							? c.data_consulta.split("T")[0]
+							: c.data_consulta.toISOString().split("T")[0];
+					return dataConsulta !== dataString;
+				}),
+			);
+
+			setShowActionModal(false);
+			showNotification("success", "Dia bloqueado com sucesso!");
+		} catch (error) {
+			console.error(error);
+			showNotification("error", "Erro ao salvar indisponibilidade.");
+		}
+	}
+	// Função para remover a indisponibilidade do dia
+	async function handleMakeAvailable() {
+		if (!selectedUnavailableEventId) return;
+
+		// O ID do FullCalendar é "block-123", pegamos o ID real do banco no extendedProps
+		const eventoVisual = events.find(
+			(e) => e.id === selectedUnavailableEventId,
+		);
+		const realId = eventoVisual?.extendedProps?.dbId;
+
+		if (!realId) {
+			showNotification("error", "ID do bloqueio não encontrado.");
+			return;
+		}
+
+		try {
+			await api.delete(`/indisponibilidade/${realId}`);
+			// Remove do estado local para o calendário atualizar
+			setIndisponibilidades((prev) => prev.filter((ind) => ind.id !== realId));
+			setShowActionModal(false);
+			setSelectedUnavailableEventId(null);
+			showNotification("success", "Dia liberado com sucesso!");
+		} catch (error) {
+			console.error(error);
+			showNotification("error", "Erro ao remover bloqueio.");
+		}
+	}
 	//Função para lidar com o envio do formulário
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
+		if (
+			!newEvent.paciente_id ||
+			!newEvent.aluno_id ||
+			!newEvent.horario_id
+		) {
+			showNotification("warning", "Por favor, preencha todos os campos.");
+			return;
+		}
+		let dataFinal = "";
+		if (typeof newEvent.start === "string") {
+			dataFinal = newEvent.start.split("T")[0];
+		} else {
+			dataFinal = new Date(newEvent.start).toISOString().split("T")[0];
+		}
 		const novaConsulta: Consulta = {
-			paciente_id: newEvent.paciente_id!,
-			fisioterapeuta_id: newEvent.fisioterapeuta_id!,
-			horario_id: newEvent.horario_id!,
-			data_consulta:
-				typeof newEvent.start === "string"
-					? new Date(newEvent.start).toISOString()
-					: newEvent.start.toISOString(),
-			status: newEvent.status ?? "agendada",
+			paciente_id: Number(newEvent.paciente_id),
+			aluno_id: Number(newEvent.aluno_id),
+			horario_id: Number(newEvent.horario_id),
+			// Converte para YYYY-MM-DD (formato DATE do MySQL)
+			data_consulta: dataFinal,
+			status: "agendada",
 		};
 
 		//Valida todos os campos antes de enviar
 		const pacienteError = validateField("paciente_id", newEvent.paciente_id);
 		const fisioterapeutaError = validateField(
-			"fisioterapeuta_id",
-			newEvent.fisioterapeuta_id,
+			"aluno_id",
+			newEvent.aluno_id,
 		);
 		const horarioError = validateField("horario_id", newEvent.horario_id);
 
 		if (pacienteError || fisioterapeutaError || horarioError) {
 			setFormErrors({
 				paciente_id: pacienteError,
-				fisioterapeuta_id: fisioterapeutaError,
+				aluno_id: fisioterapeutaError,
 				horario_id: horarioError,
 			});
 			showNotification(
@@ -263,7 +395,7 @@ export default function Disponibilidade() {
 		setEventToDelete({
 			id: Number(data.event.id),
 			pacienteNome: data.event.extendedProps?.pacienteNome,
-			fisioterapeutaNome: data.event.extendedProps?.fisioterapeutaNome,
+			alunoNome: data.event.extendedProps?.alunoNome,
 			horario: data.event.extendedProps?.horario,
 		});
 	}
@@ -307,12 +439,13 @@ export default function Disponibilidade() {
 
 	//Função para fechar o modal e resetar o estado
 	function handleCloseModal() {
+		setShowActionModal(false);
 		setShowModal(false);
 		setNewEvent({
 			title: "",
 			start: "",
 			id: 0,
-			fisioterapeuta_id: 0,
+			aluno_id: 0,
 			paciente_id: 0,
 			horario_id: 0,
 			status: "",
@@ -324,7 +457,7 @@ export default function Disponibilidade() {
 	//Adicione este estado
 	const [formErrors, setFormErrors] = useState({
 		paciente_id: "",
-		fisioterapeuta_id: "",
+		aluno_id: "",
 		horario_id: "",
 	});
 
@@ -350,12 +483,21 @@ export default function Disponibilidade() {
 			.catch((err) => {
 				console.error("Ops! Ocorreu um erro: " + err);
 			});
+
+		api
+			.get<Indisponibilidade[]>("/indisponibilidade")
+			.then((response) => setIndisponibilidades(response.data))
+			.catch((err) =>
+				console.error("Erro ao carregar indisponibilidades: " + err),
+			);
 	}, []);
 
-	//Efeito para buscar pacientes, fisioterapeutas e horários ao carregar a página
+	//Efeito para buscar pacientes, alunos e horários ao carregar a página
 	useEffect(() => {
 		api.get("/paciente").then((res) => setPacientes(res.data));
-		api.get("/usuario").then((res) => setFisioterapeutas(res.data));
+		api
+			.get("/usuario/alunos")
+			.then((res) => setAlunos(res.data));
 		api.get("/horario").then((res) => setHorarios(res.data));
 	}, []);
 
@@ -374,9 +516,10 @@ export default function Disponibilidade() {
 
 		const eventos: EventInput[] = consulta.map((item) => {
 			const paciente = pacientes.find((p) => p.id === item.paciente_id);
-			const fisioterapeuta = fisioterapeutas.find(
-				(f) => f.id === item.fisioterapeuta_id,
+			const fisioterapeuta = alunos.find(
+				(f) => f.id === item.aluno_id,
 			);
+
 			const horario = horarios.find((h) => h.id === item.horario_id);
 
 			// Extrai a data (YYYY-MM-DD) da data_consulta
@@ -403,17 +546,17 @@ export default function Disponibilidade() {
 			// Informações formatadas para exibição
 			const pacienteNome = paciente?.nome_completo ?? "Paciente não informado";
 			const fisioterapeutaNome =
-				fisioterapeuta?.nome_completo ?? "Fisioterapeuta não informado";
+				fisioterapeuta?.nome_completo ?? "Aluno não informado";
 
 			//Criação do evento
 			return {
 				id: String(item.id), // Convertendo para string para evitar erro de tipagem
-				title: `Paciente: ${pacienteNome} | Fisioterapeuta: ${fisioterapeutaNome}`,
+				title: `Paciente: ${pacienteNome} | Aluno: ${fisioterapeutaNome}`,
 				start: dataHoraISO,
 				startStr: horario?.horario ? `${horario.horario}` : "",
 				extendedProps: {
 					pacienteId: item.paciente_id,
-					fisioterapeutaId: item.fisioterapeuta_id,
+					fisioterapeutaId: item.aluno_id,
 					horarioId: item.horario_id,
 					status: item.status,
 					pacienteNome: pacienteNome,
@@ -441,11 +584,11 @@ export default function Disponibilidade() {
 			};
 		});
 		setEvents([...eventos, ...eventosIndisponiveis]);
-	}, [consulta, pacientes, fisioterapeutas, horarios, indisponibilidades, filtroAlunoId,
+	}, [consulta, pacientes, alunos, horarios, indisponibilidades, filtroAlunoId,
 		filtroPacienteId]);
 
 	return (
-		<>
+		<RouteGuard>
 			{/* Sistema de notificações */}
 			<div
 				className={`fixed top-24 right-8 max-w-sm p-4 rounded-md shadow-lg transition-all duration-300 ${
@@ -545,7 +688,7 @@ export default function Disponibilidade() {
 									className='w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-950 focus:outline-none focus:ring-1 focus:ring-blue-950'
 								>
 									<option value='all'>Todos</option>
-									{fisioterapeutas.map((f) => (
+									{alunos.map((f) => (
 										<option key={f.id} value={String(f.id)}>
 											{f.nome_completo}
 										</option>
@@ -590,6 +733,9 @@ export default function Disponibilidade() {
 								center: "title",
 								end: "dayGridMonth,timeGridWeek,timeGridDay",
 							}}
+							eventDurationEditable={false} // Impede de esticar o evento (mudar a duração)
+							eventStartEditable={false} // Impede de arrastar o evento para outro dia
+							eventResizableFromStart={false} // Garante que não apareça a "alça" de redimensionar
 							//Tempo de duração do horário
 							slotDuration={"01:00:00"}
 							//Calendário com eventos
@@ -600,6 +746,14 @@ export default function Disponibilidade() {
 							editable={true}
 							//Configuração do tooltip
 							eventDidMount={(info) => {
+								// Verifica se é mobile (tela menor ou igual a 768px).
+								// Se for, encerra a função aqui mesmo e não cria o tooltip.
+								if (window.innerWidth <= 768) {
+									return;
+								}
+								if (info.event.extendedProps.status === "indisponivel") {
+									return;
+								}
 								//Cria um elemento tooltip personalizado
 								const tooltip = document.createElement("div");
 								tooltip.className = "fc-event-tooltip";
@@ -608,9 +762,8 @@ export default function Disponibilidade() {
                     <p><strong>Paciente:</strong> ${
 											info.event.extendedProps.pacienteNome || "Não informado"
 										}</p>
-                    <p><strong>Fisioterapeuta:</strong> ${
-											info.event.extendedProps.fisioterapeutaNome ||
-											"Não informado"
+                    <p><strong>Aluno:</strong> ${
+											info.event.extendedProps.fisioterapeutaNome || "Não informado"
 										}</p>
                     <p><strong>Horário:</strong> ${
 											info.event.extendedProps.horario || "Não informado"
@@ -623,8 +776,11 @@ export default function Disponibilidade() {
 
 								document.body.appendChild(tooltip);
 
-								// Mostra o tooltip no hover com verificação de posição
-								info.el.addEventListener("mouseenter", () => {
+								// Armazena referência no elemento para cleanup via eventWillUnmount
+								(info.el as HTMLElement & { _tooltip?: HTMLDivElement })._tooltip = tooltip;
+
+								// Handlers nomeados para remoção limpa
+								const handleMouseEnter = () => {
 									const rect = info.el.getBoundingClientRect();
 
 									// Define tooltip como visível mas fora da tela para poder calcular dimensões
@@ -644,36 +800,49 @@ export default function Disponibilidade() {
 
 									// Posicionamento horizontal
 									if (spaceRight >= tooltipWidth + 10) {
-										// Suficiente espaço à direita
 										tooltip.style.left = rect.right + 10 + "px";
 									} else {
-										// Não há espaço à direita, posicionar à esquerda
 										tooltip.style.left = rect.left - tooltipWidth - 10 + "px";
 									}
 
 									// Posicionamento vertical
 									if (spaceBottom >= tooltipHeight + 10) {
-										// Suficiente espaço abaixo
 										tooltip.style.top = rect.top + "px";
 									} else {
-										// Não há espaço abaixo, posicionar acima ou ajustar para caber na tela
 										const topPosition = Math.max(
 											10,
 											rect.bottom - tooltipHeight,
 										);
 										tooltip.style.top = topPosition + "px";
 									}
-								});
-
-								// Esconde o tooltip quando o mouse sai
-								info.el.addEventListener("mouseleave", () => {
-									tooltip.style.display = "none";
-								});
-
-								// Remove o tooltip quando o evento é desmontado
-								return () => {
-									document.body.removeChild(tooltip);
 								};
+
+								const handleMouseLeave = () => {
+									tooltip.style.display = "none";
+								};
+
+								info.el.addEventListener("mouseenter", handleMouseEnter);
+								info.el.addEventListener("mouseleave", handleMouseLeave);
+
+								// Armazena handlers para remoção no unmount
+								(info.el as HTMLElement & { _tooltipHandlers?: { enter: () => void; leave: () => void } })._tooltipHandlers = {
+									enter: handleMouseEnter,
+									leave: handleMouseLeave,
+								};
+							}}
+							// Cleanup correto: remove tooltip do DOM e listeners do elemento
+							eventWillUnmount={(info) => {
+								const el = info.el as HTMLElement & {
+									_tooltip?: HTMLDivElement;
+									_tooltipHandlers?: { enter: () => void; leave: () => void };
+								};
+								if (el._tooltip && document.body.contains(el._tooltip)) {
+									document.body.removeChild(el._tooltip);
+								}
+								if (el._tooltipHandlers) {
+									el.removeEventListener("mouseenter", el._tooltipHandlers.enter);
+									el.removeEventListener("mouseleave", el._tooltipHandlers.leave);
+								}
 							}}
 							//Permite selecionar eventos
 							selectable={true}
@@ -692,7 +861,19 @@ export default function Disponibilidade() {
 							//Permite adicionar eventos ao clicar em uma data
 							dateClick={handleDateClick}
 							//Permite editar eventos ao clicar
-							eventClick={(data) => handleDeleteModal(data)}
+							eventClick={(data) => {
+								if (data.event.extendedProps?.status === "indisponivel") {
+									// Apenas admin/coordenador podem interagir com bloqueios
+									if (!temPermissaoIndisponibilidade) {
+										return;
+									}
+									setActionModalMode("unavailable");
+									setSelectedUnavailableEventId(data.event.id);
+									setShowActionModal(true);
+								} else {
+									handleDeleteModal(data);
+								}
+							}}
 							//Configuração de altura do calendário
 							height={600}
 							//Configuração de expansão de linhas
@@ -733,7 +914,7 @@ export default function Disponibilidade() {
 						</Transition.Child>
 
 						<div className='fixed inset-0 z-10 overflow-y-auto'>
-							<div className='flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0'>
+							<div className='flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0'>
 								<Transition.Child
 									as={Fragment}
 									enter='ease-out duration-300'
@@ -772,11 +953,8 @@ export default function Disponibilidade() {
 																{eventToDelete?.pacienteNome ||
 																	"paciente não identificado"}
 															</strong>{" "}
-															com{" "}
-															<strong>
-																{eventToDelete?.fisioterapeutaNome}
-															</strong>{" "}
-															às <strong>{eventToDelete?.horario}</strong>?
+															com <strong>{eventToDelete?.alunoNome}</strong> às{" "}
+															<strong>{eventToDelete?.horario}</strong>?
 														</p>
 													</div>
 												</div>
@@ -806,6 +984,105 @@ export default function Disponibilidade() {
 						</div>
 					</Dialog>
 				</Transition.Root>
+				{/* Modal de Escolha de Ação */}
+				<Transition.Root show={showActionModal} as={Fragment}>
+					<Dialog
+						as='div'
+						className='relative z-10'
+						onClose={setShowActionModal}
+					>
+						<Transition.Child
+							as={Fragment}
+							enter='ease-out duration-300'
+							enterFrom='opacity-0'
+							enterTo='opacity-100'
+							leave='ease-in duration-200'
+							leaveFrom='opacity-100'
+							leaveTo='opacity-0'
+						>
+							<div className='fixed inset-0 backdrop-blur-xs transition-opacity' />
+						</Transition.Child>
+
+						<div className='fixed inset-0 z-10 overflow-y-auto'>
+							<div className='flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0'>
+								<Transition.Child
+									as={Fragment}
+									enter='ease-out duration-300'
+									enterFrom='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
+									enterTo='opacity-100 translate-y-0 sm:scale-100'
+									leave='ease-in duration-200'
+									leaveFrom='opacity-100 translate-y-0 sm:scale-100'
+									leaveTo='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
+								>
+									<Dialog.Panel className='relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md sm:p-6'>
+										<div>
+											<div className='mt-3 text-center sm:mt-5'>
+												<Dialog.Title
+													as='h3'
+													className='text-base font-semibold leading-6 text-gray-900'
+												>
+													Selecione uma ação
+												</Dialog.Title>
+												<div className='mt-2'>
+													<p className='text-sm text-gray-500'>
+														O que você deseja fazer para este dia?
+													</p>
+												</div>
+											</div>
+										</div>
+										<div className='mt-5 sm:mt-6 flex flex-col space-y-3'>
+											{actionModalMode === "default" ? (
+												<>
+													<button
+														type='button'
+														className='inline-flex w-full justify-center rounded-md bg-gradient-to-r from-blue-800 to-indigo-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-950 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-blue-950'
+														onClick={() => {
+															setShowActionModal(false);
+															setShowModal(true);
+														}}
+													>
+														Cadastrar consulta
+													</button>
+
+													{/* BOTÃO DE BLOQUEIO: Só aparece para Admin e Coordenador */}
+													{temPermissaoIndisponibilidade && (
+														<button
+															type='button'
+															className='inline-flex w-full justify-center rounded-md bg-gradient-to-r from-red-600 to-red-800 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-red-600'
+															onClick={handleMakeUnavailable}
+														>
+															Tornar dia indisponível
+														</button>
+													)}
+												</>
+											) : (
+												/* BOTÃO DE LIBERAR DIA: Só aparece para Admin e Coordenador */
+												temPermissaoIndisponibilidade && (
+													<button
+														type='button'
+														className='inline-flex w-full justify-center bg-gradient-to-r from-emerald-600 to-teal-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-green-600'
+														onClick={handleMakeAvailable}
+													>
+														Deixar dia disponível
+													</button>
+												)
+											)}
+
+											<button
+												type='button'
+												className='mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
+												onClick={() => setShowActionModal(false)}
+											>
+												Cancelar
+											</button>
+										</div>
+									</Dialog.Panel>
+								</Transition.Child>
+							</div>
+						</div>
+					</Dialog>
+				</Transition.Root>
+
 				{/* Modal de adicionar nova consulta */}
 				<Transition.Root show={showModal} as={Fragment}>
 					<Dialog as='div' className='relative z-10' onClose={setShowModal}>
@@ -822,7 +1099,7 @@ export default function Disponibilidade() {
 						</Transition.Child>
 
 						<div className='fixed inset-0 z-10 overflow-y-auto'>
-							<div className='flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0'>
+							<div className='flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0'>
 								<Transition.Child
 									as={Fragment}
 									enter='ease-out duration-300'
@@ -849,7 +1126,7 @@ export default function Disponibilidade() {
 												</Dialog.Title>
 												<form
 													onSubmit={handleSubmit}
-													className='mt-4 flex flex-col space-y-4 w-full'
+													className='mt-4 flex flex-col space-y-4 w-full items-center'
 												>
 													<div className='grid grid-cols-1 md:grid-cols-3 gap-4 w-full'>
 														<div className='w-full'>
@@ -896,43 +1173,41 @@ export default function Disponibilidade() {
 														</div>
 														<div className='w-full'>
 															<label className='block text-sm font-medium text-gray-700 mb-1'>
-																Fisioterapeuta
+																Aluno
 															</label>
 															<Select
-																value={newEvent.fisioterapeuta_id ?? ""}
+																value={newEvent.aluno_id ?? ""}
 																onChange={(e) => {
 																	const value = Number(e.target.value);
 																	setNewEvent({
 																		...newEvent,
-																		fisioterapeuta_id: value,
+																		aluno_id: value,
 																	});
 																	setFormErrors({
 																		...formErrors,
-																		fisioterapeuta_id: validateField(
-																			"fisioterapeuta_id",
+																		aluno_id: validateField(
+																			"aluno_id",
 																			value,
 																		),
 																	});
 																}}
 																required
 																className={`w-full rounded-md border ${
-																	formErrors.fisioterapeuta_id
+																	formErrors.aluno_id
 																		? "border-red-500"
 																		: "border-gray-300"
 																} px-4 py-3 text-base select-custom`}
 															>
-																<option value=''>
-																	Selecione o fisioterapeuta
-																</option>
-																{fisioterapeutas.map((f) => (
+																<option value=''>Selecione o Aluno</option>
+																{alunos.map((f) => (
 																	<option key={f.id} value={f.id}>
 																		{f.nome_completo}
 																	</option>
 																))}
 															</Select>
-															{formErrors.fisioterapeuta_id && (
+															{formErrors.aluno_id && (
 																<p className='mt-1 text-sm text-red-600'>
-																	{formErrors.fisioterapeuta_id}
+																	{formErrors.aluno_id}
 																</p>
 															)}
 														</div>
@@ -1003,6 +1278,6 @@ export default function Disponibilidade() {
 					</Dialog>
 				</Transition.Root>
 			</main>
-		</>
+		</RouteGuard>
 	);
 }
