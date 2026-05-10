@@ -12,7 +12,7 @@ export interface Consulta {
 	paciente_id: number | string;
 	data_consulta: Date | string;
 	horario_id?: number;
-	fisioterapeuta_id?: number;
+	aluno_id?: number;
 	status?: string;
 }
 
@@ -22,7 +22,7 @@ export interface Evento {
 	start: string | Date;
 	paciente_id?: number;
 	horario_id?: number;
-	fisioterapeuta_id?: number;
+	aluno_id?: number;
 	status?: string;
 }
 
@@ -39,7 +39,7 @@ export interface Paciente {
 	ativo?: number;
 }
 
-export interface Fisioterapeuta {
+export interface Aluno {
 	id?: number;
 	nome_completo: string;
 	email: string;
@@ -50,4 +50,12 @@ export interface Fisioterapeuta {
 	semestre: string;
 	perfil_id: number;
 	ativo?: number;
+}
+
+export interface Indisponibilidade {
+	id?: number;
+	data_indisponivel: string;
+	descricao?: string;
+	hora_inicio?: string | null;
+	hora_fim?: string | null;
 }

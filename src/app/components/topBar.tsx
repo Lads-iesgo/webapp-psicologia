@@ -1,6 +1,5 @@
 "use client";
 
-//Importando a tipagem necessária
 import { useState } from "react";
 import Link from "next/link";
 import { TitleProps } from "../interfaces/types";
@@ -10,7 +9,6 @@ import { useNotification } from "./Notification";
 import { useAuth } from "./AuthContext";
 import { getVisibleMenuItems } from "../lib/menuItems";
 
-//Componente TopBar que exibe o título da página
 export default function TopBar(props: TitleProps) {
 	const [isOpen, setIsOpen] = useState(false);
 
@@ -38,7 +36,7 @@ export default function TopBar(props: TitleProps) {
 	};
 
 	return (
-		<div>
+		<>
 			{/* TopBar Principal */}
 			<div className='fixed top-0 left-0 md:left-[288px] w-full md:w-[calc(100vw-288px)] h-16 bg-blue-100 flex items-center px-4 md:px-8 shadow z-50'>
 				{/* 1. Centro: Título (Perfeitamente centralizado em TODAS as telas) */}
@@ -129,6 +127,6 @@ export default function TopBar(props: TitleProps) {
 					</div>
 				</nav>
 			</div>
-		</div>
+		</>
 	);
 }

@@ -7,7 +7,14 @@ import { AxiosError } from "axios";
 import NavBar from "../components/navBar";
 import TopBar from "../components/topBar";
 import Button from "../components/button";
+import RouteGuard from "../components/RouteGuard";
 import api from "../services/api";
+import {
+	isValidCPF,
+	isValidTelefone,
+	isValidCEP,
+	isValidDataNascimento,
+} from "../lib/validations";
 
 export default function CadastrarPaciente() {
 	//Estado para armazenar os dados do formulário
@@ -145,9 +152,45 @@ export default function CadastrarPaciente() {
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setMensagem(null);
+
+		// Validação de CPF
+		if (!isValidCPF(form.cpf)) {
+			setMensagem({
+				tipo: "erro",
+				texto: "CPF inválido. Verifique os dígitos e tente novamente.",
+			});
+			return;
+		}
+
+		// Validação de Telefone
+		if (!isValidTelefone(form.telefone)) {
+			setMensagem({
+				tipo: "erro",
+				texto: "Telefone inválido. Informe um número válido com DDD.",
+			});
+			return;
+		}
+
+		// Validação de Data de Nascimento
+		if (!isValidDataNascimento(form.data_nascimento)) {
+			setMensagem({
+				tipo: "erro",
+				texto: "Data de nascimento inválida. Use o formato DD/MM/AAAA.",
+			});
+			return;
+		}
+
+		// Validação de CEP
+		if (!isValidCEP(form.cep)) {
+			setMensagem({
+				tipo: "erro",
+				texto: "CEP inválido. Informe um CEP com 8 dígitos.",
+			});
+			return;
+		}
+
 		setLoading(true);
 
-		//Validação simples para verificar se o CPF já está preenchido
 		try {
 			const dadosPaciente = {
 				nome_completo: `${form.nome} ${form.sobrenome}`,
@@ -197,77 +240,107 @@ export default function CadastrarPaciente() {
 	}
 
 	return (
-		<div className='flex flex-col min-h-screen bg-gray-50'>
-			<NavBar />
-			<div className='ml-72'>
-				{" "}
-				<TopBar title='Cadastrar Paciente' />
-				<main className='pt-24 px-4 md:px-8 mt-14 pb-8'>
-					<div className='max-w-4xl mx-auto overflow-hidden rounded-[20px] shadow-lg'>
-						<div className='bg-blue-900 h-10 w-full'></div>
-						{/* Formulário de cadastro de paciente */}
-						<form
-							onSubmit={handleSubmit}
-							className='border border-gray-200 bg-white px-4 sm:px-6 md:px-8 py-6 rounded-b-[20px]'
-						>
-							<div className='flex flex-col md:flex-row gap-4 mb-4'>
-								<div className='w-full md:w-1/2'>
-									<label className='block text-base font-medium mb-1'>
-										Nome
-									</label>
-									<input
-										type='text'
-										name='nome'
-										value={form.nome}
-										placeholder='Digite o nome'
-										onChange={handleChange}
-										className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
-										required
-									/>
+		<RouteGuard>
+			<div className='flex flex-col min-h-screen bg-gray-50'>
+				<NavBar />
+				<div className='w-full md:pl-72 transition-all duration-300'>
+					{" "}
+					<TopBar title='Cadastrar Paciente' />
+					<main className='pt-24 px-4 md:px-8 mt-14 pb-8'>
+						<div className='max-w-4xl mx-auto overflow-hidden rounded-[20px] shadow-lg'>
+							<div className='bg-blue-900 h-10 w-full'></div>
+							{/* Formulário de cadastro de paciente */}
+							<form
+								onSubmit={handleSubmit}
+								className='border border-gray-200 bg-white px-4 sm:px-6 md:px-8 py-6 rounded-b-[20px]'
+							>
+								<div className='flex flex-col md:flex-row gap-4 mb-4'>
+									<div className='w-full md:w-1/2'>
+										<label className='block text-base font-medium mb-1'>
+											Nome
+										</label>
+										<input
+											type='text'
+											name='nome'
+											value={form.nome}
+											placeholder='Digite o nome'
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
+											required
+										/>
+									</div>
+									<div className='w-full md:w-1/2'>
+										<label className='block text-base font-medium mb-1'>
+											Sobrenome
+										</label>
+										<input
+											type='text'
+											name='sobrenome'
+											value={form.sobrenome}
+											placeholder='Digite o sobrenome'
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
+											required
+										/>
+									</div>
 								</div>
-								<div className='w-full md:w-1/2'>
-									<label className='block text-base font-medium mb-1'>
-										Sobrenome
-									</label>
-									<input
-										type='text'
-										name='sobrenome'
-										value={form.sobrenome}
-										placeholder='Digite o sobrenome'
-										onChange={handleChange}
-										className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
-										required
-									/>
-								</div>
-							</div>
-							<div className='flex flex-col md:flex-row gap-4 mb-4'>
-								<div className='w-full sm:w-1/2 md:w-1/6'>
-									<label className='block text-base font-medium mb-1'>
-										CPF
-									</label>
-									<input
-										type='text'
-										name='cpf'
-										value={form.cpf}
-										placeholder='123.456.789-00'
-										onChange={handleChange}
-										className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
-										required
-									/>
-								</div>
-								<div className='w-full sm:w-1/2 md:w-1/6'>
-									<label className='block text-base font-medium mb-1'>
-										Telefone
-									</label>
-									<input
-										type='text'
-										name='telefone'
-										value={form.telefone}
-										placeholder='(11) 98765-4321'
-										onChange={handleChange}
-										className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
-										required
-									/>
+								<div className='flex flex-col md:flex-row gap-4 mb-4'>
+									<div className='w-full sm:w-1/2 md:w-1/6'>
+										<label className='block text-base font-medium mb-1'>
+											CPF
+										</label>
+										<input
+											type='text'
+											name='cpf'
+											value={form.cpf}
+											placeholder='123.456.789-00'
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
+											required
+										/>
+									</div>
+									<div className='w-full sm:w-1/2 md:w-1/6'>
+										<label className='block text-base font-medium mb-1'>
+											Telefone
+										</label>
+										<input
+											type='text'
+											name='telefone'
+											value={form.telefone}
+											placeholder='(11) 98765-4321'
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
+											required
+										/>
+									</div>
+									<div className='w-full sm:w-1/2 md:w-1/3'>
+										<label className='block text-base font-medium mb-1'>
+											E-mail
+										</label>
+										<input
+											type='email'
+											name='email'
+											value={form.email}
+											placeholder='email@exemplo.com'
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
+											required
+										/>
+									</div>
+									<div className='w-full sm:w-1/2 md:w-1/4'>
+										<label className='block text-base font-medium mb-1'>
+											Data de nascimento
+										</label>
+										<input
+											type='text'
+											name='data_nascimento'
+											value={form.data_nascimento}
+											placeholder='DD/MM/AAAA'
+											onChange={handleChange}
+											className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
+											required
+										/>
+									</div>
 								</div>
 								<div className='flex flex-col md:flex-row gap-4 mb-4'>
 									<div className='w-full sm:w-1/3'>
@@ -359,120 +432,30 @@ export default function CadastrarPaciente() {
 										</select>
 									</div>
 								</div>
-							</div>
-							<div className='flex flex-col md:flex-row gap-4 mb-4'>
-								<div className='w-full md:w-3/5'>
-									<label className='block text-base font-medium mb-1'>
-										Endereço
-									</label>
-									<input
-										type='text'
-										name='endereco'
-										value={form.endereco}
-										placeholder='Nome da rua, avenida, etc.'
-										onChange={handleChange}
-										className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
-										required
-									/>
-								</div>
-								<div className='w-full sm:w-1/2 md:w-1/5'>
-									<label className='block text-base font-medium mb-1'>
-										sexo
-									</label>
-									<select
-										name='genero'
-										value={form.genero}
-										onChange={handleChange}
-										className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black appearance-none'
-										required
+								{mensagem && (
+									<div
+										className={`text-center font-semibold rounded-[5px] p-3 mt-4 ${
+											mensagem.tipo === "sucesso"
+												? "bg-green-100 text-green-800 border border-green-300"
+												: "bg-red-100 text-red-800 border border-red-300"
+										}`}
 									>
-										<option value='nao_informar'>Não quero informar</option>
-										<option value='masculino'>Masculino</option>
-										<option value='feminino'>Feminino</option>
-									</select>
-								</div>
-								<div className='w-full sm:w-1/2 md:w-1/5'>
-									<label className='block text-base font-medium mb-1'>
-										Número
-									</label>
-									<input
-										type='text'
-										name='numero'
-										value={form.numero}
-										placeholder='123'
-										onChange={handleChange}
-										className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
-										required
+										{mensagem.texto}
+									</div>
+								)}
+								<div className='flex justify-end mt-6'>
+									<Button
+										text={loading ? "Salvando..." : "Salvar"}
+										onClick={() => {}}
+										variant='primary'
+										type='submit'
 									/>
 								</div>
-							</div>
-							<div className='flex flex-col md:flex-row gap-4 mb-4'>
-								<div className='w-full sm:w-1/3'>
-									<label className='block text-base font-medium mb-1'>
-										Bairro
-									</label>
-									<input
-										type='text'
-										name='bairro'
-										value={form.bairro}
-										placeholder='Centro'
-										onChange={handleChange}
-										className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
-										required
-									/>
-								</div>
-								<div className='w-full sm:w-1/3'>
-									<label className='block text-base font-medium mb-1'>
-										CEP
-									</label>
-									<input
-										type='text'
-										name='cep'
-										value={form.cep}
-										placeholder='00000-000'
-										onChange={handleChange}
-										className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
-										required
-									/>
-								</div>
-								<div className='w-full sm:w-1/3'>
-									<label className='block text-base font-medium mb-1'>
-										Cidade
-									</label>
-									<input
-										type='text'
-										name='cidade'
-										value={form.cidade}
-										placeholder='São Paulo'
-										onChange={handleChange}
-										className='border border-gray-300 rounded-[5px] px-3 py-2 w-full text-black'
-										required
-									/>
-								</div>
-							</div>
-							{mensagem && (
-								<div
-									className={`text-center font-semibold rounded-[5px] p-3 mt-4 ${
-										mensagem.tipo === "sucesso"
-											? "bg-green-100 text-green-800 border border-green-300"
-											: "bg-red-100 text-red-800 border border-red-300"
-									}`}
-								>
-									{mensagem.texto}
-								</div>
-							)}
-							<div className='flex justify-end mt-6'>
-								<Button
-									text={loading ? "Salvando..." : "Salvar"}
-									onClick={() => {}}
-									variant='primary'
-									type='submit'
-								/>
-							</div>
-						</form>
-					</div>
-				</main>
+							</form>
+						</div>
+					</main>
+				</div>
 			</div>
-		</div>
+		</RouteGuard>
 	);
 }
