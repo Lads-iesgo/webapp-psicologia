@@ -8,6 +8,8 @@ import Link from "next/link";
 import Button from "../components/button";
 import api from "../services/api";
 import { useNotification } from "../components/Notification";
+import { useAuth } from "../components/AuthContext";
+import { getUserGroup, getDefaultRoute } from "../lib/permissions";
 
 import logo from "../../../public/logo-iesgo.png";
 
@@ -15,6 +17,7 @@ export default function Login() {
 	const router = useRouter();
 	const { showNotification } = useNotification();
 	const cookies = useCookies(); // Usar hook em vez de factory function
+	const { refreshUser } = useAuth();
 
 	const [credentials, setCredentials] = useState({
 		email: "",
@@ -36,9 +39,12 @@ export default function Login() {
 
 			// Armazenar o token no cookies
 			cookies.set("token", response.data.token, {
-				expires: 1, // expira em 1 dias
-				secure: process.env.NODE_ENV === "production",
-				sameSite: "strict",
+				expires: 1,
+				path: "/",
+				sameSite: "lax",
+				secure:
+					typeof window !== "undefined" &&
+					window.location.protocol === "https:",
 			});
 
 			// Salvar informações do usuário no localStorage
@@ -53,11 +59,17 @@ export default function Login() {
 				);
 			}
 
-			// Armazenar flag indicando login bem-sucedido para a Home mostrar notificação
+			// Armazenar flag indicando login bem-sucedido para mostrar notificação
 			sessionStorage.setItem("loginSuccess", "true");
 
-			// Redireciona para a página home sem mostrar notificação aqui
-			router.push("/home");
+			// Atualiza o AuthContext para refletir o usuário recém-logado
+			refreshUser();
+
+			// Redireciona conforme o grupo do perfil (GROUP_1 → /home, GROUP_2 → /disponibilidade)
+			const perfil = String(response.data.user?.perfil || "").toLowerCase();
+			const group = getUserGroup(perfil);
+			const destino = getDefaultRoute(group);
+			router.push(destino);
 		} catch (error: unknown) {
 			// Continua mostrando notificação de erro aqui
 			let errorMessage =
@@ -85,10 +97,10 @@ export default function Login() {
 						height={60}
 						priority
 						alt='Logo Instituição IESGO'
-						className='mb-2'
+						className='mb-2 w-auto h-auto'
 					/>
 					<h2 className='text-white text-xl font-semibold tracking-wide'>
-						FISIOTERAPIA
+						PSICOLOGIA
 					</h2>
 				</div>
 
@@ -148,7 +160,7 @@ export default function Login() {
 					</form>
 
 					<div className='mt-6 text-center text-sm text-gray-500'>
-						<p>© {new Date().getFullYear()} IESGO - Clínica de Fisioterapia</p>
+						<p>© {new Date().getFullYear()} IESGO - Clínica de PSICOLOGIA</p>
 					</div>
 				</div>
 			</div>
