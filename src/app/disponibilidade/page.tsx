@@ -91,54 +91,17 @@ export default function Disponibilidade() {
 		api.changeView("timeGridDay", new Date(ano, mes - 1, dia));
 	}
 
-	// Torna o título do FullCalendar (ex: "Abril 2026") clicável para abrir
-	// o seletor de data nativo. Reaplica a cada mudança de visualização porque
-	// o FullCalendar recria/atualiza o elemento do título.
 	function tornarTituloClicavel() {
 		const titleEl = document.querySelector(".fc-toolbar-title") as
-			| (HTMLElement & {
-					_dayPickerHandler?: () => void;
-					_dayPickerEnter?: () => void;
-					_dayPickerLeave?: () => void;
-			  })
+			| (HTMLElement & { _dayPickerHandler?: () => void })
 			| null;
 		if (!titleEl) return;
 
-		// Lê o título direto da API do FullCalendar (fonte canônica) em vez do
-		// DOM — evita duplicação se o FC mutou o título antes do nosso callback.
-		const tituloTexto =
-			calendarRef.current?.getApi().view.title ||
-			(titleEl.textContent || "").trim();
-		titleEl.innerHTML =
-			`<span>${tituloTexto}</span>` +
-			`<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:0.5rem;display:inline-block;vertical-align:middle"><polyline points="6 9 12 15 18 9"/></svg>`;
-
-		// Aparência de botão: padding, borda inferior tracejada, hover com fundo azul claro
-		titleEl.style.cursor = "pointer";
-		titleEl.style.display = "inline-flex";
-		titleEl.style.alignItems = "center";
-		titleEl.style.gap = "0.25rem";
-		titleEl.style.padding = "0.25rem 0.75rem";
-		titleEl.style.borderRadius = "0.5rem";
-		titleEl.style.borderBottom = "2px dashed #1e3a8a";
-		titleEl.style.color = "#1e3a8a";
-		titleEl.style.transition = "background-color 0.15s, color 0.15s";
+		titleEl.classList.add("fc-title-clickable");
 		titleEl.title = "Clique para escolher um dia";
 
-		// Limpa handlers antigos antes de reatribuir
 		if (titleEl._dayPickerHandler)
 			titleEl.removeEventListener("click", titleEl._dayPickerHandler);
-		if (titleEl._dayPickerEnter)
-			titleEl.removeEventListener("mouseenter", titleEl._dayPickerEnter);
-		if (titleEl._dayPickerLeave)
-			titleEl.removeEventListener("mouseleave", titleEl._dayPickerLeave);
-
-		const onEnter = () => {
-			titleEl.style.backgroundColor = "rgba(30, 58, 138, 0.1)";
-		};
-		const onLeave = () => {
-			titleEl.style.backgroundColor = "";
-		};
 
 		const handler = () => {
 			const input = dateInputRef.current;
@@ -158,11 +121,7 @@ export default function Disponibilidade() {
 		};
 
 		titleEl.addEventListener("click", handler);
-		titleEl.addEventListener("mouseenter", onEnter);
-		titleEl.addEventListener("mouseleave", onLeave);
 		titleEl._dayPickerHandler = handler;
-		titleEl._dayPickerEnter = onEnter;
-		titleEl._dayPickerLeave = onLeave;
 	}
 
 	useEffect(() => {
@@ -720,8 +679,6 @@ export default function Disponibilidade() {
 
 						<FullCalendar
 							ref={calendarRef}
-							//Reaplica o handler de clique no título sempre que a visualização muda
-							//(o FullCalendar recria o elemento `.fc-toolbar-title` a cada render).
 							datesSet={tornarTituloClicavel}
 
 							//Opções do calendário
