@@ -473,7 +473,7 @@ export default function Disponibilidade() {
 			return matchAluno && matchPaciente;
 		});
 
-		const eventos: EventInput[] = consulta.map((item) => {
+		const eventos: EventInput[] = consultasFiltradas.map((item) => {
 			const paciente = pacientes.find((p) => p.id === item.paciente_id);
 			const fisioterapeuta = alunos.find(
 				(f) => f.id === item.aluno_id,
